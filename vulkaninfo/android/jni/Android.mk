@@ -2,7 +2,7 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE    := example
+LOCAL_MODULE    := vulkaninfo
 LOCAL_SRC_FILES := lib/libvulkaninfo.so
 LOCAL_LDLIBS    := -llog -landroid
 
