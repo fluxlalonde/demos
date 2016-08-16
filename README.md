@@ -1,13 +1,13 @@
-VulkanInfo
-===========
+Golang Vulkan API Demos
+=======================
 
-This is a simple Vulkan + Android Go app template.
+This repository contains demos made with [Vulkan API for Golang](http://github.com/vulkan-go/vulkan). Currently these are Android apps only, but I hope for contributions.
 
-### Initial setup
+## Initial setup
 
-Refer to [github.com/xlab/android-go/example#prerequisites](https://github.com/xlab/android-go/tree/master/example#prerequisites) for the first run instructions for Android NDK. Please note that you'll need to obtain a device with Android N or Nvidia Shield K1, because currently only these provide the native Vulkan API support.
+Refer to [github.com/xlab/android-go/example#prerequisites](https://github.com/xlab/android-go/tree/master/example#prerequisites) for the first run instructions for Android NDK. Please note that you'll need to obtain a device with native Vulkan API support.
 
-Once setup correctly, this course of actions would be sufficient:
+Once setup correctly, this course of actions is the flow of building and debugging of any app:
 
 ```bash
 make # you can debug any bugs in Go code here
@@ -15,13 +15,12 @@ make install
 make listen
 ```
 
-After you make changes, a simple `make && make install` would be sufficient to have your app updated.
+After you make changes, a simple `make && make install` would be enough to have your app APK updated on the device.
 See the [Makefile](/Makefile) for details on each step.
 
-### Description
+## [VulkanInfo](https://github.com/vulkan-go/demos/vulkaninfo)
 
-VulkanInfo gathers info about your Vulkan environment's properties and prints them to the log.
-After you install and run the target app, check out the ADB logcat logs:
+This is a simple app template, ported from [googlesamples/android-vulkan-tutorials/tutorial01_load_vulkan](https://github.com/googlesamples/android-vulkan-tutorials). VulkanInfo gathers info about your Vulkan environment's properties and prints them to the log. After you install and run the target app, check out the ADB logcat logs:
 
 ```
 $ make listen
@@ -57,3 +56,27 @@ adb logcat *:S VulkanInfo
 08-16 21:22:21.008  5096  5111 I VulkanInfo: │ 1                      │ VK_KHR_swapchain       │
 08-16 21:22:21.008  5096  5111 I VulkanInfo: ╰────────────────────────┴────────────────────────╯
 ```
+
+If you enable some of validation layers, they'd get listed too.
+
+## [VulkanDraw](https://github.com/vulkan-go/demos/vulkandraw)
+
+A fully functional drawing example, ported from [googlesamples/android-vulkan-tutorials/tutorial05_triangle](https://github.com/googlesamples/android-vulkan-tutorials). 1KLOC, nothing special, I liked the way the original code has been organized. This was the first piece of some real code I wrote using the Vulkan API and it really delivered my the idea behind it. Anyway, I used wrong method of handling errors here, just to see how it would feel after I'm done. It feels horrible, must've used asserts like in the next demo. All the debug and validation layers are disabled by default
+
+<a href="https://cl.ly/410g1n2r041E/screen.png"><img src="https://cl.ly/410g1n2r041E/screen.png" width="500"></a>
+
+## [VulkanCube](https://github.com/vulkan-go/demos/vulkancube)
+
+Well, after the first demo I felt like I'm ready for a big deal. A cube! It's a drawing example with dynamic state
+that I ported from the Cube demo under [googlesamples/vulkan-basic-samples/LunarGSamples/Demos](https://github.com/googlesamples/vulkan-basic-samples/tree/master/LunarGSamples/Demos). 3KLOC, not a big deal (sarcasm). Surely that was a total suicide plus I figured out that the repo has an outdated version of this demo and in the mainstream a lots of things are fixed somehow. Also it's poorly organized.
+
+But there are some positiva moments too. For example, I figured out how to use validation layers, so I could debug a few nasty typos and accidental bugs. Also I tried and satisfied by error handling method I chose here. Definitely would recommend to organize the error checking to be assert-like.
+
+And anyways, that was a fun trip and actually this thing works: validation layers are quiet now, these thousands of lines do useful work and some parts can be reused as snippets. It just draws nothing that I can show you :)
+
+I decided to fallaback from this example for a moment, maybe I'll do another cube demo from scratch when I'll get used to Vulkan better. Feel free to debug this thing. Validation layers and debug reporting are enabled in the code.
+
+## Contibute yours
+
+Do it! Just do it! 10KLOC is just a warm-up for you.
+
