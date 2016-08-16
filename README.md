@@ -18,7 +18,7 @@ make listen
 After you make changes, a simple `make && make install` would be enough to have your app APK updated on the device.
 See the [Makefile](/Makefile) for details on each step.
 
-## [VulkanInfo](https://github.com/vulkan-go/demos/vulkaninfo)
+## [VulkanInfo](/vulkaninfo)
 
 This is a simple app template, ported from [googlesamples/android-vulkan-tutorials/tutorial01_load_vulkan](https://github.com/googlesamples/android-vulkan-tutorials). VulkanInfo gathers info about your Vulkan environment's properties and prints them to the log. After you install and run the target app, check out the ADB logcat logs:
 
@@ -59,13 +59,13 @@ adb logcat *:S VulkanInfo
 
 If you enable some of validation layers, they'd get listed too.
 
-## [VulkanDraw](https://github.com/vulkan-go/demos/vulkandraw)
+## [VulkanDraw](/vulkandraw)
 
 A fully functional drawing example, ported from [googlesamples/android-vulkan-tutorials/tutorial05_triangle](https://github.com/googlesamples/android-vulkan-tutorials). 1KLOC, nothing special, I liked the way the original code has been organized. This was the first piece of some real code I wrote using the Vulkan API and it really delivered my the idea behind it. Anyway, I used wrong method of handling errors here, just to see how it would feel after I'm done. It feels horrible, must've used asserts like in the next demo. All the debug and validation layers are disabled by default
 
 <a href="https://cl.ly/410g1n2r041E/screen.png"><img src="https://cl.ly/410g1n2r041E/screen.png" width="500"></a>
 
-## [VulkanCube](https://github.com/vulkan-go/demos/vulkancube)
+## [VulkanCube](/vulkancube)
 
 Well, after the first demo I felt like I'm ready for a big deal. A cube! It's a drawing example with dynamic state
 that I ported from the Cube demo under [googlesamples/vulkan-basic-samples/LunarGSamples/Demos](https://github.com/googlesamples/vulkan-basic-samples/tree/master/LunarGSamples/Demos). 1.6KLOC (from 3KLOC), not a big deal (sarcasm). Surely that was a total suicide plus I figured out that the repo had an outdated version of this demo and in the LunarG mainstream a lots of things are fixed now. Also the code is very poorly organized.
