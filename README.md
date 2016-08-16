@@ -68,7 +68,7 @@ A fully functional drawing example, ported from [googlesamples/android-vulkan-tu
 ## [VulkanCube](https://github.com/vulkan-go/demos/vulkancube)
 
 Well, after the first demo I felt like I'm ready for a big deal. A cube! It's a drawing example with dynamic state
-that I ported from the Cube demo under [googlesamples/vulkan-basic-samples/LunarGSamples/Demos](https://github.com/googlesamples/vulkan-basic-samples/tree/master/LunarGSamples/Demos). 3KLOC, not a big deal (sarcasm). Surely that was a total suicide plus I figured out that the repo has an outdated version of this demo and in the mainstream a lots of things are fixed somehow. Also it's poorly organized.
+that I ported from the Cube demo under [googlesamples/vulkan-basic-samples/LunarGSamples/Demos](https://github.com/googlesamples/vulkan-basic-samples/tree/master/LunarGSamples/Demos). 1.6KLOC (from 3KLOC), not a big deal (sarcasm). Surely that was a total suicide plus I figured out that the repo had an outdated version of this demo and in the LunarG mainstream a lots of things are fixed now. Also the code is very poorly organized.
 
 But there are some positiva moments too. For example, I figured out how to use validation layers, so I could debug a few nasty typos and accidental bugs. Also I tried and satisfied by error handling method I chose here. Definitely would recommend to organize the error checking to be assert-like.
 

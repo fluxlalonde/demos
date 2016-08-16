@@ -372,14 +372,12 @@ func NewVulkanDeviceAndroid(appInfo vk.ApplicationInfo,
 	}
 
 	if enableDebug {
-		vk.InitDebug(v.instance)
-
 		// Phase 4: vk.CreateDebugReportCallback
 
 		dbgCreateInfo := vk.DebugReportCallbackCreateInfo{
 			SType:       vk.StructureTypeDebugReportCallbackCreateInfo,
-			PfnCallback: dbgCallbackFunc,
 			Flags:       vk.DebugReportFlags(vk.DebugReportErrorBit | vk.DebugReportWarningBit),
+			PfnCallback: dbgCallbackFunc,
 		}
 		var dbg vk.DebugReportCallback
 		err = vk.Error(vk.CreateDebugReportCallback(v.instance, &dbgCreateInfo, nil, &dbg))
