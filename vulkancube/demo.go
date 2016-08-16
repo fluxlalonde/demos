@@ -92,9 +92,10 @@ type Demo struct {
 	format     vk.Format
 	colorSpace vk.ColorSpace
 
-	swapchainImageCount int
-	swapchain           vk.Swapchain
-	buffers             []SwapchainBuffersInfo
+	swapchainImageCount    int
+	swapchain              vk.Swapchain
+	graphicsQueueNodeIndex uint32
+	buffers                []SwapchainBuffersInfo
 
 	cmdPool  vk.CommandPool
 	depth    DepthInfo
@@ -129,7 +130,7 @@ type Demo struct {
 	dbgCallback vk.DebugReportCallback
 
 	currentBuffer uint32
-	queueCount    uint32
+	queueCount    int
 }
 
 func (d *Demo) flushInitCmd() {
@@ -214,7 +215,6 @@ func (d *Demo) beginCmdBuffer() {
 }
 
 func (d *Demo) drawBuildCmd(cmdBuf vk.CommandBuffer) {
-	log.Println("draw cmd", d.width, d.height)
 	cmdBufferBeginInfo := vk.CommandBufferBeginInfo{
 		SType: vk.StructureTypeCommandBufferBeginInfo,
 		PInheritanceInfo: []vk.CommandBufferInheritanceInfo{{
@@ -408,7 +408,26 @@ func (d *Demo) draw() {
 	orPanic(err)
 }
 
-func (d *Demo) prepareBuffers() {
+func (d *Demo) prepareSwapchain() {
+	vk.GetPhysicalDeviceProperties(d.gpu, &d.gpuProps)
+	var queueCount uint32
+	vk.GetPhysicalDeviceQueueFamilyProperties(d.gpu, &queueCount, nil)
+	d.queueCount = int(queueCount)
+	orPanicWith(d.queueCount >= 1, "Physical device has no avalable queues")
+	d.queueProps = make([]vk.QueueFamilyProperties, d.queueCount)
+	vk.GetPhysicalDeviceQueueFamilyProperties(d.gpu, &queueCount, d.queueProps)
+
+	gfxQueueIdx := -1
+	for i := 0; i < d.queueCount; i++ {
+		props := d.queueProps[i]
+		props.Deref()
+		if props.QueueFlags&vk.QueueFlags(vk.QueueGraphicsBit) != 0 {
+			gfxQueueIdx = i
+			break
+		}
+	}
+	orPanicWith(gfxQueueIdx >= 0, "Cannot find queue with graphics support")
+
 	var surfCapabilities vk.SurfaceCapabilities
 	err := vk.GetPhysicalDeviceSurfaceCapabilities(d.gpu, d.surface, &surfCapabilities)
 	orPanic(err)
@@ -438,6 +457,52 @@ func (d *Demo) prepareBuffers() {
 		d.height = currentExtent.Height
 	}
 
+	supportsPresent := make([]vk.Bool32, d.queueCount)
+	for i := 0; i < d.queueCount; i++ {
+		vk.GetPhysicalDeviceSurfaceSupport(d.gpu, uint32(i), d.surface, &supportsPresent[i])
+	}
+
+	var graphicsQueueNodeIndex = vk.MaxUint32
+	var presentQueueNodeIndex = vk.MaxUint32
+	for i := 0; i < d.queueCount; i++ {
+		props := d.queueProps[i]
+		props.Deref()
+		if props.QueueFlags&vk.QueueFlags(vk.QueueGraphicsBit) != 0 {
+			if graphicsQueueNodeIndex == vk.MaxUint32 {
+				graphicsQueueNodeIndex = uint32(i)
+			}
+			if supportsPresent[i] == vk.Bool32(vk.True) {
+				graphicsQueueNodeIndex = uint32(i)
+				presentQueueNodeIndex = uint32(i)
+				break
+			}
+		}
+	}
+	if presentQueueNodeIndex == vk.MaxUint32 {
+		// If didn't find a queue that supports both graphics and present, then
+		// find a separate present queue.
+		for i := 0; i < d.queueCount; i++ {
+			if supportsPresent[i] == vk.Bool32(vk.True) {
+				presentQueueNodeIndex = uint32(i)
+				break
+			}
+		}
+	}
+	orPanicWith(graphicsQueueNodeIndex != vk.MaxUint32 &&
+		presentQueueNodeIndex != vk.MaxUint32, "Could not find a graphics or present queues")
+
+	// TODO: Add support for separate queues, including presentation,
+	//       synchronization, and appropriate tracking for QueueSubmit.
+	// NOTE: While it is possible for an application to use a separate graphics
+	//       and a present queues, this demo program assumes it is only using
+	//       one:
+	orPanicWith(graphicsQueueNodeIndex == presentQueueNodeIndex,
+		"Could not find a common graphics and present queues")
+	d.graphicsQueueNodeIndex = graphicsQueueNodeIndex
+	var queue vk.Queue
+	vk.GetDeviceQueue(d.device, d.graphicsQueueNodeIndex, 0, &queue)
+	d.queue = queue
+
 	// If mailbox mode is available, use it, as is the lowest-latency non-
 	// tearing mode. If not, try IMMEDIATE which will usually be available,
 	// and is fastest (though it tears).  If not, fall back to FIFO which is
@@ -462,30 +527,26 @@ func (d *Demo) prepareBuffers() {
 		// Application must settle for fewer images than desired:
 		desiredNumberOfSwapchainImages = surfCapabilities.MaxImageCount
 	}
-	preTransform := surfCapabilities.CurrentTransform
-	if surfCapabilities.SupportedTransforms&
-		vk.SurfaceTransformFlags(vk.SurfaceTransformIdentityBit) != 0 {
-		preTransform = vk.SurfaceTransformIdentityBit
-	}
 	oldSwapchain := d.swapchain
+	queueFamily := []uint32{0}
 	swapchainCreateInfo := vk.SwapchainCreateInfo{
 		SType:           vk.StructureTypeSwapchainCreateInfo,
 		Surface:         d.surface,
-		MinImageCount:   desiredNumberOfSwapchainImages,
+		MinImageCount:   surfCapabilities.MinImageCount,
 		ImageFormat:     d.format,
 		ImageColorSpace: d.colorSpace,
-		ImageExtent: vk.Extent2D{
-			Width:  swapchainExtent.Width,
-			Height: swapchainExtent.Height,
-		},
-		ImageUsage:       vk.ImageUsageFlags(vk.ImageUsageColorAttachmentBit),
-		PreTransform:     preTransform,
-		CompositeAlpha:   vk.CompositeAlphaOpaqueBit,
-		ImageArrayLayers: 1,
-		ImageSharingMode: vk.SharingModeExclusive,
-		PresentMode:      swapchainPresentMode,
-		OldSwapchain:     oldSwapchain,
-		Clipped:          vk.True,
+		ImageExtent:     surfCapabilities.CurrentExtent,
+		ImageUsage:      vk.ImageUsageFlags(vk.ImageUsageColorAttachmentBit),
+		PreTransform:    vk.SurfaceTransformIdentityBit,
+		CompositeAlpha:  vk.CompositeAlphaInheritBit,
+
+		ImageArrayLayers:      1,
+		QueueFamilyIndexCount: 1,
+		PQueueFamilyIndices:   queueFamily,
+		ImageSharingMode:      vk.SharingModeExclusive,
+		PresentMode:           swapchainPresentMode,
+		OldSwapchain:          oldSwapchain,
+		Clipped:               vk.True,
 	}
 	err = vk.CreateSwapchain(d.device, &swapchainCreateInfo, nil, &d.swapchain)
 	orPanic(err)
@@ -885,7 +946,7 @@ func (d *Demo) prepareDescriptorLayout() {
 		StageFlags:      vk.ShaderStageFlags(vk.ShaderStageVertexBit),
 	}, {
 		Binding:         1,
-		DescriptorType:  vk.DescriptorTypeUniformBuffer,
+		DescriptorType:  vk.DescriptorTypeCombinedImageSampler,
 		DescriptorCount: demoTextureCount,
 		StageFlags:      vk.ShaderStageFlags(vk.ShaderStageFragmentBit),
 	}}
@@ -974,10 +1035,14 @@ func (d *Demo) preparePipeline(vsName, fsName string) {
 		Topology: vk.PrimitiveTopologyTriangleList,
 	}
 	pipelineRasterizationStateInfo := vk.PipelineRasterizationStateCreateInfo{
-		SType:       vk.StructureTypePipelineRasterizationStateCreateInfo,
-		PolygonMode: vk.PolygonModeFill,
-		CullMode:    vk.CullModeFlags(vk.CullModeBackBit),
-		FrontFace:   vk.FrontFaceCounterClockwise,
+		SType:                   vk.StructureTypePipelineRasterizationStateCreateInfo,
+		DepthClampEnable:        vk.False,
+		RasterizerDiscardEnable: vk.False,
+		PolygonMode:             vk.PolygonModeFill,
+		CullMode:                vk.CullModeFlags(vk.CullModeNone),
+		FrontFace:               vk.FrontFaceClockwise,
+		DepthBiasEnable:         vk.False,
+		LineWidth:               1,
 	}
 	pipelineColorBlendStateInfo := vk.PipelineColorBlendStateCreateInfo{
 		SType:           vk.StructureTypePipelineColorBlendStateCreateInfo,
@@ -1122,7 +1187,7 @@ func (d *Demo) prepareDescriptorSet() {
 		DescriptorType:  vk.DescriptorTypeCombinedImageSampler,
 		PImageInfo:      texDescriptors,
 	}}
-	vk.UpdateDescriptorSets(d.device, 1, descriptorWrites, 0, nil)
+	vk.UpdateDescriptorSets(d.device, 2, descriptorWrites, 0, nil)
 }
 
 func (d *Demo) prepareFramebuffers() {
@@ -1150,7 +1215,7 @@ func (d *Demo) Prepare(vsName, fsName, texName string) {
 
 	cmdPoolInfo := vk.CommandPoolCreateInfo{
 		SType:            vk.StructureTypeCommandPoolCreateInfo,
-		QueueFamilyIndex: 0,
+		QueueFamilyIndex: d.graphicsQueueNodeIndex,
 	}
 	err := vk.CreateCommandPool(d.device, &cmdPoolInfo, nil, &d.cmdPool)
 	orPanic(err)
@@ -1160,7 +1225,7 @@ func (d *Demo) Prepare(vsName, fsName, texName string) {
 	d.texName = texName
 	d.textures = make([]TextureObject, 1)
 
-	d.prepareBuffers()
+	d.prepareSwapchain()
 	d.prepareDepth()
 	d.prepareTextures(texName)
 	d.prepareCubeDataBuffer()
@@ -1408,7 +1473,6 @@ func NewDemoForAndroid(appInfo vk.ApplicationInfo, window *android.NativeWindow)
 	}
 	err = vk.CreateDevice(d.gpu, &deviceInfo, nil, &d.device)
 	orPanic(err)
-	vk.GetDeviceQueue(d.device, 0, 0, &d.queue)
 
 	if enableDebug {
 		dbgCreateInfo := vk.DebugReportCallbackCreateInfo{
