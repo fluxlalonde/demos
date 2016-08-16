@@ -65,7 +65,6 @@ func main() {
 
 				case app.NativeWindowDestroyed:
 					demo.Cleanup()
-					vk.Destr
 				case app.NativeWindowRedrawNeeded:
 					demo.Step()
 					log.Println("step done")
