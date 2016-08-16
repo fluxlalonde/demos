@@ -117,6 +117,66 @@ func getPhysicalDevices(instance vk.Instance) ([]vk.PhysicalDevice, error) {
 	return gpuList, nil
 }
 
+func getInstanceLayers() (layerNames []string) {
+	var instanceLayerLen uint32
+	err := vk.EnumerateInstanceLayerProperties(&instanceLayerLen, nil)
+	orPanic(err)
+	instanceLayers := make([]vk.LayerProperties, instanceLayerLen)
+	err = vk.EnumerateInstanceLayerProperties(&instanceLayerLen, instanceLayers)
+	orPanic(err)
+	for _, layer := range instanceLayers {
+		layer.Deref()
+		layerNames = append(layerNames,
+			vk.ToString(layer.LayerName[:]))
+	}
+	return layerNames
+}
+
+func getDeviceLayers(gpu vk.PhysicalDevice) (layerNames []string) {
+	var deviceLayerLen uint32
+	err := vk.EnumerateDeviceLayerProperties(gpu, &deviceLayerLen, nil)
+	orPanic(err)
+	deviceLayers := make([]vk.LayerProperties, deviceLayerLen)
+	err = vk.EnumerateDeviceLayerProperties(gpu, &deviceLayerLen, deviceLayers)
+	orPanic(err)
+	for _, layer := range deviceLayers {
+		layer.Deref()
+		layerNames = append(layerNames,
+			vk.ToString(layer.LayerName[:]))
+	}
+	return layerNames
+}
+
+func getInstanceExtensions() (extNames []string) {
+	var instanceExtLen uint32
+	err := vk.EnumerateInstanceExtensionProperties("", &instanceExtLen, nil)
+	orPanic(err)
+	instanceExt := make([]vk.ExtensionProperties, instanceExtLen)
+	err = vk.EnumerateInstanceExtensionProperties("", &instanceExtLen, instanceExt)
+	orPanic(err)
+	for _, ext := range instanceExt {
+		ext.Deref()
+		extNames = append(extNames,
+			vk.ToString(ext.ExtensionName[:]))
+	}
+	return extNames
+}
+
+func getDeviceExtensions(gpu vk.PhysicalDevice) (extNames []string) {
+	var deviceExtLen uint32
+	err := vk.EnumerateDeviceExtensionProperties(gpu, "", &deviceExtLen, nil)
+	orPanic(err)
+	deviceExt := make([]vk.ExtensionProperties, deviceExtLen)
+	err = vk.EnumerateDeviceExtensionProperties(gpu, "", &deviceExtLen, deviceExt)
+	orPanic(err)
+	for _, ext := range deviceExt {
+		ext.Deref()
+		extNames = append(extNames,
+			vk.ToString(ext.ExtensionName[:]))
+	}
+	return extNames
+}
+
 func printInfo(v *VulkanDeviceInfo) {
 	var gpuProperties vk.PhysicalDeviceProperties
 	vk.GetPhysicalDeviceProperties(v.gpuDevices[0], &gpuProperties)
@@ -158,11 +218,41 @@ func printInfo(v *VulkanDeviceInfo) {
 		surfaceCapabilities.CurrentTransform))
 	table.AddRow("Allowed transforms", fmt.Sprintf("%02x",
 		surfaceCapabilities.SupportedTransforms))
-
-	table.AddSeparator()
 	var formatCount uint32
 	vk.GetPhysicalDeviceSurfaceFormats(v.gpuDevices[0], v.surface, &formatCount, nil)
 	table.AddRow("Surface formats", fmt.Sprintf("%d of %d", formatCount, vk.FormatRangeSize))
+	table.AddSeparator()
+
+	table.AddRow("INSTANCE EXTENSIONS", "")
+	instanceExt := getInstanceExtensions()
+	for i, extName := range instanceExt {
+		table.AddRow(i+1, extName)
+	}
+
+	table.AddSeparator()
+	table.AddRow("DEVICE EXTENSIONS", "")
+	deviceExt := getDeviceExtensions(v.gpuDevices[0])
+	for i, extName := range deviceExt {
+		table.AddRow(i+1, extName)
+	}
+
+	instanceLayers := getInstanceLayers()
+	if len(instanceLayers) > 0 {
+		table.AddSeparator()
+		table.AddRow("INSTANCE LAYERS")
+		for i, layerName := range instanceLayers {
+			table.AddRow(i+1, layerName)
+		}
+	}
+
+	deviceLayers := getDeviceLayers(v.gpuDevices[0])
+	if len(deviceLayers) > 0 {
+		table.AddSeparator()
+		table.AddRow("DEVICE LAYERS")
+		for i, layerName := range deviceLayers {
+			table.AddRow(i+1, layerName)
+		}
+	}
 
 	fmt.Println("\n\n" + table.Render())
 }
@@ -181,5 +271,22 @@ func physicalDeviceType(dev vk.PhysicalDeviceType) string {
 		return "Other"
 	default:
 		return "Unknown"
+	}
+}
+
+func orPanic(err interface{}) {
+	switch v := err.(type) {
+	case error:
+		if v != nil {
+			panic(err)
+		}
+	case vk.Result:
+		if err := vk.Error(v); err != nil {
+			panic(err)
+		}
+	case bool:
+		if !v {
+			panic("condition failed: != true")
+		}
 	}
 }

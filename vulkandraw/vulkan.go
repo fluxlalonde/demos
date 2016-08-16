@@ -9,6 +9,13 @@ import (
 	"github.com/xlab/android-go/android"
 )
 
+// enableDebug is disabled by default since VK_EXT_debug_report
+// is not guaranteed to be present on a device.
+//
+// Nvidia Shield K1 fw 1.3.0 lacks this extension,
+// on fw 1.2.0 it simply doesn't work. Facepalm.
+const enableDebug = false
+
 type VulkanDeviceInfo struct {
 	gpuDevices []vk.PhysicalDevice
 
@@ -74,13 +81,6 @@ func (v *VulkanRenderInfo) DefaultFence() vk.Fence {
 func (v *VulkanRenderInfo) DefaultSemaphore() vk.Semaphore {
 	return v.semaphores[0]
 }
-
-// enableDebug is disabled by default since VK_EXT_debug_report
-// is not guaranteed to be present on a device.
-//
-// Nvidia Shield K1 fw 1.3.0 lacks this extension,
-// on fw 1.2.0 it simply doesn't work.
-const enableDebug = false
 
 func VulkanInit(v *VulkanDeviceInfo, s *VulkanSwapchainInfo,
 	r *VulkanRenderInfo, b *VulkanBufferInfo, gfx *VulkanGfxPipelineInfo) {
@@ -274,11 +274,26 @@ func NewVulkanDeviceAndroid(appInfo vk.ApplicationInfo,
 			"VK_EXT_debug_report\x00")
 	}
 
+	// these layers must be included in APK,
+	// see Android.mk and ValidationLayers.mk
+	instanceLayers := []string{
+	// "VK_LAYER_GOOGLE_threading\x00",
+	// "VK_LAYER_LUNARG_parameter_validation\x00",
+	// "VK_LAYER_LUNARG_object_tracker\x00",
+	// "VK_LAYER_LUNARG_core_validation\x00",
+	// "VK_LAYER_LUNARG_api_dump\x00",
+	// "VK_LAYER_LUNARG_image\x00",
+	// "VK_LAYER_LUNARG_swapchain\x00",
+	// "VK_LAYER_GOOGLE_unique_objects\x00",
+	}
+
 	instanceCreateInfo := vk.InstanceCreateInfo{
 		SType:                   vk.StructureTypeInstanceCreateInfo,
 		PApplicationInfo:        &appInfo,
 		EnabledExtensionCount:   uint32(len(instanceExtensions)),
 		PpEnabledExtensionNames: instanceExtensions,
+		EnabledLayerCount:       uint32(len(instanceLayers)),
+		PpEnabledLayerNames:     instanceLayers,
 	}
 	var v VulkanDeviceInfo
 	err := vk.Error(vk.CreateInstance(&instanceCreateInfo, nil, &v.instance))
@@ -311,6 +326,19 @@ func NewVulkanDeviceAndroid(appInfo vk.ApplicationInfo,
 
 	// Phase 3: vk.CreateDevice with vk.DeviceCreateInfo (a logical device)
 
+	// these layers must be included in APK,
+	// see Android.mk and ValidationLayers.mk
+	deviceLayers := []string{
+	// "VK_LAYER_GOOGLE_threading\x00",
+	// "VK_LAYER_LUNARG_parameter_validation\x00",
+	// "VK_LAYER_LUNARG_object_tracker\x00",
+	// "VK_LAYER_LUNARG_core_validation\x00",
+	// "VK_LAYER_LUNARG_api_dump\x00",
+	// "VK_LAYER_LUNARG_image\x00",
+	// "VK_LAYER_LUNARG_swapchain\x00",
+	// "VK_LAYER_GOOGLE_unique_objects\x00",
+	}
+
 	queueCreateInfos := []vk.DeviceQueueCreateInfo{{
 		SType:            vk.StructureTypeDeviceQueueCreateInfo,
 		QueueCount:       1,
@@ -325,6 +353,8 @@ func NewVulkanDeviceAndroid(appInfo vk.ApplicationInfo,
 		PQueueCreateInfos:       queueCreateInfos,
 		EnabledExtensionCount:   uint32(len(deviceExtensions)),
 		PpEnabledExtensionNames: deviceExtensions,
+		EnabledLayerCount:       uint32(len(deviceLayers)),
+		PpEnabledLayerNames:     deviceLayers,
 	}
 	var device vk.Device // we choose the first GPU available for this device
 	err = vk.Error(vk.CreateDevice(v.gpuDevices[0], &deviceCreateInfo, nil, &device))
@@ -845,12 +875,14 @@ func CreateGraphicsPipeline(device vk.Device,
 		Layout:              gfxPipeline.layout,
 		RenderPass:          renderPass,
 	}}
+	pipelines := make([]vk.Pipeline, 1)
 	err = vk.Error(vk.CreateGraphicsPipelines(device,
-		gfxPipeline.cache, 1, pipelineCreateInfos, nil, &gfxPipeline.pipeline))
+		gfxPipeline.cache, 1, pipelineCreateInfos, nil, pipelines))
 	if err != nil {
 		err = fmt.Errorf("vk.CreateGraphicsPipelines failed with %s", err)
 		return gfxPipeline, err
 	}
+	gfxPipeline.pipeline = pipelines[0]
 	gfxPipeline.device = device
 	return gfxPipeline, nil
 }

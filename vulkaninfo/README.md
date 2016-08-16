@@ -29,25 +29,31 @@ adb logcat -c
 adb logcat *:S VulkanInfo
 --------- beginning of system
 --------- beginning of main
-08-13 12:59:39.311 11932 11946 I VulkanInfo: ╭───────────────────────────────────────────╮
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ VULKAN PROPERTIES AND SURFACE CAPABILITES │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: ├────────────────────────┬──────────────────┤
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ Physical Device Name   │ NVIDIA Tegra K1  │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ Physical Device Vendor │ 10de             │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ Physical Device Type   │ Integrated GPU   │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ Physical GPUs          │ 1                │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ API Version            │ 1.0.3            │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ API Version Supported  │ 1.0.3            │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ Driver Version         │ 361.0.0          │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: ├────────────────────────┼──────────────────┤
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ Image count            │ 2 - 3            │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ Array layers           │ 1                │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ Image size (current)   │ 1200x1920        │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ Image size (extent)    │ 1x1 - 4096x4096  │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ Usage flags            │ 9f               │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ Current transform      │ 04               │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ Allowed transforms     │ 10f              │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: ├────────────────────────┼──────────────────┤
-08-13 12:59:39.311 11932 11946 I VulkanInfo: │ Surface formats        │ 3 of 185         │
-08-13 12:59:39.311 11932 11946 I VulkanInfo: ╰────────────────────────┴──────────────────╯
+08-16 21:22:21.008  5096  5111 I VulkanInfo: ╭─────────────────────────────────────────────────╮
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │    VULKAN PROPERTIES AND SURFACE CAPABILITES    │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: ├────────────────────────┬────────────────────────┤
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ Physical Device Name   │ NVIDIA Tegra K1        │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ Physical Device Vendor │ 10de                   │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ Physical Device Type   │ Integrated GPU         │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ Physical GPUs          │ 1                      │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ API Version            │ 1.0.3                  │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ API Version Supported  │ 1.0.3                  │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ Driver Version         │ 361.0.0                │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: ├────────────────────────┼────────────────────────┤
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ Image count            │ 2 - 3                  │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ Array layers           │ 1                      │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ Image size (current)   │ 1200x1920              │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ Image size (extent)    │ 1x1 - 4096x4096        │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ Usage flags            │ 9f                     │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ Current transform      │ 04                     │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ Allowed transforms     │ 10f                    │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ Surface formats        │ 3 of 185               │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: ├────────────────────────┼────────────────────────┤
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ INSTANCE EXTENSIONS    │                        │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ 1                      │ VK_KHR_surface         │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ 2                      │ VK_KHR_android_surface │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: ├────────────────────────┼────────────────────────┤
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ DEVICE EXTENSIONS      │                        │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: │ 1                      │ VK_KHR_swapchain       │
+08-16 21:22:21.008  5096  5111 I VulkanInfo: ╰────────────────────────┴────────────────────────╯
 ```

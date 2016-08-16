@@ -11,4 +11,4 @@ include $(PREBUILT_SHARED_LIBRARY)
 # 	https://github.com/LunarG/VulkanTools
 # 	mirror: https://github.com/vulkan-go/VulkanTools
 
-include $(LOCAL_PATH)/ValidationLayers.mk
+# include $(LOCAL_PATH)/ValidationLayers.mk

@@ -444,8 +444,7 @@ func (d *Demo) prepareSwapchain() {
 	currentExtent := surfCapabilities.CurrentExtent
 	currentExtent.Deref()
 	// width and height are either both undefined, or both set.
-	if currentExtent.Width == ^uint32(0) ||
-		currentExtent.Width == 0 { // not sure what value means undefined
+	if currentExtent.Width == vk.MaxUint32 {
 		// If the surface size is undefined, the size is set to
 		// the size of the images requested.
 		swapchainExtent.Width = d.width
