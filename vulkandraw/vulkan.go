@@ -13,7 +13,7 @@ import (
 // is not guaranteed to be present on a device.
 //
 // Nvidia Shield K1 fw 1.3.0 lacks this extension,
-// on fw 1.2.0 it simply doesn't work. Facepalm.
+// on fw 1.2.0 it works fine.
 const enableDebug = false
 
 type VulkanDeviceInfo struct {
