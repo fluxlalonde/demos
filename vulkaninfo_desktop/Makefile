@@ -1,0 +1,5 @@
+GLFW_INCLUDE_DIR = "?"
+GLFW_LIB_DIR = "?"
+
+install:
+	CGO_CFLAGS="-I$(GLFW_INCLUDE_DIR)" CGO_LDFLAGS="-L$(GLFW_LIB_DIR)" go install
