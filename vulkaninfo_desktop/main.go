@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/go-gl/glfw/v3.2/glfw"
-vk "github.com/vulkan-go/vulkan"
+	vk "github.com/vulkan-go/vulkan"
 )
 
 var appInfo = &vk.ApplicationInfo{
