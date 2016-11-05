@@ -1,6 +1,9 @@
 package main
 
-import vk "github.com/vulkan-go/vulkan"
+import (
+	"github.com/go-gl/glfw/v3.2/glfw"
+vk "github.com/vulkan-go/vulkan"
+)
 
 var appInfo = &vk.ApplicationInfo{
 	SType:              vk.StructureTypeApplicationInfo,
@@ -11,9 +14,14 @@ var appInfo = &vk.ApplicationInfo{
 }
 
 func main() {
-	err := vk.Init()
+	orPanic(glfw.Init())
+	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
+	win, err := glfw.CreateWindow(640, 480, "Vulkan Info", nil, nil)
 	orPanic(err)
-	vkDevice, err := NewVulkanDevice(appInfo)
+
+	err = vk.Init()
+	orPanic(err)
+	vkDevice, err := NewVulkanDevice(appInfo, win)
 	orPanic(err)
 	printInfo(vkDevice)
 	vkDevice.Destroy()

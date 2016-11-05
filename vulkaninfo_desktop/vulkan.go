@@ -16,14 +16,13 @@ type VulkanDeviceInfo struct {
 	device   vk.Device
 }
 
-func NewVulkanDevice(appInfo *vk.ApplicationInfo) (*VulkanDeviceInfo, error) {
+func NewVulkanDevice(appInfo *vk.ApplicationInfo, win *glfw.Window) (*VulkanDeviceInfo, error) {
 
 	v := &VulkanDeviceInfo{}
 
 	// step 1: create a Vulkan instance.
-	instanceExtensions := []string{
-		"VK_KHR_surface\x00",
-	}
+	instanceExtensions := vk.GetRequiredInstanceExtensions()
+
 	instanceCreateInfo := &vk.InstanceCreateInfo{
 		SType:                   vk.StructureTypeInstanceCreateInfo,
 		PApplicationInfo:        appInfo,
@@ -37,11 +36,7 @@ func NewVulkanDevice(appInfo *vk.ApplicationInfo) (*VulkanDeviceInfo, error) {
 	}
 
 	// step 2: init the surface using a GLFW window
-	win, err := glfw.CreateWindow(640, 480, "Vulkan Info", nil, nil)
-	if err != nil {
-		return nil, err
-	}
-	err = vk.Error(vk.CreateWindowSurface(v.instance, win.GLFWWindow(), nil, &v.surface))
+	err = vk.Error(vk.CreateGLFWSurface(v.instance, win.GLFWWindow(), nil, &v.surface))
 	if err != nil {
 		vk.DestroyInstance(v.instance, nil)
 		err = fmt.Errorf("vkCreateWindowSurface failed with %s", err)
