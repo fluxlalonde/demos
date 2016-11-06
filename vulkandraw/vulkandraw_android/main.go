@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/vulkan-go/demos/vulkandraw"
 	vk "github.com/vulkan-go/vulkan"
 	"github.com/xlab/android-go/android"
 	"github.com/xlab/android-go/app"
@@ -13,7 +14,7 @@ func init() {
 	app.SetLogTag("VulkanDraw")
 }
 
-var appInfo = vk.ApplicationInfo{
+var appInfo = &vk.ApplicationInfo{
 	SType:              vk.StructureTypeApplicationInfo,
 	ApiVersion:         vk.MakeVersion(1, 0, 0),
 	ApplicationVersion: vk.MakeVersion(1, 0, 0),
@@ -33,11 +34,11 @@ func main() {
 			catcher.RecvDie(-1),
 		)
 		var (
-			v   VulkanDeviceInfo
-			s   VulkanSwapchainInfo
-			r   VulkanRenderInfo
-			b   VulkanBufferInfo
-			gfx VulkanGfxPipelineInfo
+			v   vulkandraw.VulkanDeviceInfo
+			s   vulkandraw.VulkanSwapchainInfo
+			r   vulkandraw.VulkanRenderInfo
+			b   vulkandraw.VulkanBufferInfo
+			gfx vulkandraw.VulkanGfxPipelineInfo
 
 			vkActive bool
 		)
@@ -66,35 +67,52 @@ func main() {
 				case app.NativeWindowCreated:
 					err := vk.Init()
 					orPanic(err)
-					v, err = NewVulkanDeviceAndroid(appInfo, event.Window)
+					v, err = vulkandraw.NewVulkanDevice(appInfo, event.Window.Ptr())
 					orPanic(err)
 					s, err = v.CreateSwapchain()
 					orPanic(err)
-					r, err = CreateRenderer(v.device, s.displayFormat)
+					r, err = vulkandraw.CreateRenderer(v.Device, s.DisplayFormat)
 					orPanic(err)
-					err = s.CreateFramebuffers(r.renderPass, vk.NullHandle)
+					err = s.CreateFramebuffers(r.RenderPass, vk.NullImageView)
 					orPanic(err)
 					b, err = v.CreateBuffers()
 					orPanic(err)
-					gfx, err = CreateGraphicsPipeline(v.device, s.displaySize, r.renderPass)
+					gfx, err = vulkandraw.CreateGraphicsPipeline(v.Device, s.DisplaySize, r.RenderPass)
 					orPanic(err)
-					log.Println("[INFO] swapchain lengths:", s.swapchainLen)
+					log.Println("[INFO] swapchain lengths:", s.SwapchainLen)
 					err = r.CreateCommandBuffers(s.DefaultSwapchainLen())
 					orPanic(err)
 
-					VulkanInit(&v, &s, &r, &b, &gfx)
+					vulkandraw.VulkanInit(&v, &s, &r, &b, &gfx)
 					vkActive = true
 
 				case app.NativeWindowDestroyed:
 					vkActive = false
-					DestroyInOrder(&v, &s, &r, &b, &gfx)
+					vulkandraw.DestroyInOrder(&v, &s, &r, &b, &gfx)
 				case app.NativeWindowRedrawNeeded:
 					if vkActive {
-						VulkanDrawFrame(v, s, r)
+						vulkandraw.VulkanDrawFrame(v, s, r)
 					}
 					a.NativeWindowRedrawDone()
 				}
 			}
 		}
 	})
+}
+
+func orPanic(err interface{}) {
+	switch v := err.(type) {
+	case error:
+		if v != nil {
+			panic(err)
+		}
+	case vk.Result:
+		if err := vk.Error(v); err != nil {
+			panic(err)
+		}
+	case bool:
+		if !v {
+			panic("condition failed: != true")
+		}
+	}
 }

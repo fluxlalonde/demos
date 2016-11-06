@@ -1,4 +1,4 @@
-package main
+package vulkandraw
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"unsafe"
 
 	vk "github.com/vulkan-go/vulkan"
-	"github.com/xlab/android-go/android"
 )
 
 // enableDebug is disabled by default since VK_EXT_debug_report
@@ -20,31 +19,31 @@ type VulkanDeviceInfo struct {
 	gpuDevices []vk.PhysicalDevice
 
 	dbg      vk.DebugReportCallback
-	instance vk.Instance
-	surface  vk.Surface
-	queue    vk.Queue
-	device   vk.Device
+	Instance vk.Instance
+	Surface  vk.Surface
+	Queue    vk.Queue
+	Device   vk.Device
 }
 
 type VulkanSwapchainInfo struct {
-	device vk.Device
+	Device vk.Device
 
-	swapchains   []vk.Swapchain
-	swapchainLen []uint32
+	Swapchains   []vk.Swapchain
+	SwapchainLen []uint32
 
-	displaySize   vk.Extent2D
-	displayFormat vk.Format
+	DisplaySize   vk.Extent2D
+	DisplayFormat vk.Format
 
-	framebuffers []vk.Framebuffer
-	displayViews []vk.ImageView
+	Framebuffers []vk.Framebuffer
+	DisplayViews []vk.ImageView
 }
 
 func (v *VulkanSwapchainInfo) DefaultSwapchain() vk.Swapchain {
-	return v.swapchains[0]
+	return v.Swapchains[0]
 }
 
 func (v *VulkanSwapchainInfo) DefaultSwapchainLen() uint32 {
-	return v.swapchainLen[0]
+	return v.SwapchainLen[0]
 }
 
 type VulkanBufferInfo struct {
@@ -67,7 +66,7 @@ type VulkanGfxPipelineInfo struct {
 type VulkanRenderInfo struct {
 	device vk.Device
 
-	renderPass vk.RenderPass
+	RenderPass vk.RenderPass
 	cmdPool    vk.CommandPool
 	cmdBuffers []vk.CommandBuffer
 	semaphores []vk.Semaphore
@@ -94,13 +93,13 @@ func VulkanInit(v *VulkanDeviceInfo, s *VulkanSwapchainInfo,
 		}
 		renderPassBeginInfo := vk.RenderPassBeginInfo{
 			SType:       vk.StructureTypeRenderPassBeginInfo,
-			RenderPass:  r.renderPass,
-			Framebuffer: s.framebuffers[i],
+			RenderPass:  r.RenderPass,
+			Framebuffer: s.Framebuffers[i],
 			RenderArea: vk.Rect2D{
 				Offset: vk.Offset2D{
 					X: 0, Y: 0,
 				},
-				Extent: s.displaySize,
+				Extent: s.DisplaySize,
 			},
 			ClearValueCount: 1,
 			PClearValues:    clearValues,
@@ -125,10 +124,10 @@ func VulkanInit(v *VulkanDeviceInfo, s *VulkanSwapchainInfo,
 		SType: vk.StructureTypeSemaphoreCreateInfo,
 	}
 	r.fences = make([]vk.Fence, 1)
-	ret := vk.CreateFence(v.device, &fenceCreateInfo, nil, &r.fences[0])
+	ret := vk.CreateFence(v.Device, &fenceCreateInfo, nil, &r.fences[0])
 	check(ret, "vk.CreateFence")
 	r.semaphores = make([]vk.Semaphore, 1)
-	ret = vk.CreateSemaphore(v.device, &semaphoreCreateInfo, nil, &r.semaphores[0])
+	ret = vk.CreateSemaphore(v.Device, &semaphoreCreateInfo, nil, &r.semaphores[0])
 	check(ret, "vk.CreateSemaphore")
 }
 
@@ -142,8 +141,8 @@ func VulkanDrawFrame(v VulkanDeviceInfo,
 	//			N.B. non-infinite timeouts may be not yet implemented
 	//			by your Vulkan driver
 
-	err := vk.Error(vk.AcquireNextImage(v.device, s.DefaultSwapchain(),
-		vk.MaxUint64, r.DefaultSemaphore(), vk.NullHandle, &nextIdx))
+	err := vk.Error(vk.AcquireNextImage(v.Device, s.DefaultSwapchain(),
+		vk.MaxUint64, r.DefaultSemaphore(), vk.NullFence, &nextIdx))
 	if err != nil {
 		err = fmt.Errorf("vk.AcquireNextImage failed with %s", err)
 		log.Println("[WARN]", err)
@@ -153,7 +152,7 @@ func VulkanDrawFrame(v VulkanDeviceInfo,
 	// Phase 2: vk.QueueSubmit
 	//			vk.WaitForFences
 
-	vk.ResetFences(v.device, 1, r.fences)
+	vk.ResetFences(v.Device, 1, r.fences)
 	submitInfo := []vk.SubmitInfo{{
 		SType:              vk.StructureTypeSubmitInfo,
 		WaitSemaphoreCount: 1,
@@ -161,7 +160,7 @@ func VulkanDrawFrame(v VulkanDeviceInfo,
 		CommandBufferCount: 1,
 		PCommandBuffers:    r.cmdBuffers[nextIdx:],
 	}}
-	err = vk.Error(vk.QueueSubmit(v.queue, 1, submitInfo, r.DefaultFence()))
+	err = vk.Error(vk.QueueSubmit(v.Queue, 1, submitInfo, r.DefaultFence()))
 	if err != nil {
 		err = fmt.Errorf("vk.QueueSubmit failed with %s", err)
 		log.Println("[WARN]", err)
@@ -169,7 +168,7 @@ func VulkanDrawFrame(v VulkanDeviceInfo,
 	}
 
 	const timeoutNano = 10 * 1000 * 1000 * 1000 // 10 sec
-	err = vk.Error(vk.WaitForFences(v.device, 1, r.fences, vk.True, timeoutNano))
+	err = vk.Error(vk.WaitForFences(v.Device, 1, r.fences, vk.True, timeoutNano))
 	if err != nil {
 		err = fmt.Errorf("vk.WaitForFences failed with %s", err)
 		log.Println("[WARN]", err)
@@ -182,10 +181,10 @@ func VulkanDrawFrame(v VulkanDeviceInfo,
 	presentInfo := vk.PresentInfo{
 		SType:          vk.StructureTypePresentInfo,
 		SwapchainCount: 1,
-		PSwapchains:    s.swapchains,
+		PSwapchains:    s.Swapchains,
 		PImageIndices:  imageIndices,
 	}
-	err = vk.Error(vk.QueuePresent(v.queue, &presentInfo))
+	err = vk.Error(vk.QueuePresent(v.Queue, &presentInfo))
 	if err != nil {
 		err = fmt.Errorf("vk.QueuePresent failed with %s", err)
 		log.Println("[WARN]", err)
@@ -243,7 +242,7 @@ func CreateRenderer(device vk.Device, displayFormat vk.Format) (VulkanRenderInfo
 		QueueFamilyIndex: 0,
 	}
 	var r VulkanRenderInfo
-	err := vk.Error(vk.CreateRenderPass(device, &renderPassCreateInfo, nil, &r.renderPass))
+	err := vk.Error(vk.CreateRenderPass(device, &renderPassCreateInfo, nil, &r.RenderPass))
 	if err != nil {
 		err = fmt.Errorf("vk.CreateRenderPass failed with %s", err)
 		return r, err
@@ -257,23 +256,19 @@ func CreateRenderer(device vk.Device, displayFormat vk.Format) (VulkanRenderInfo
 	return r, nil
 }
 
-func NewVulkanDeviceAndroid(appInfo vk.ApplicationInfo,
-	window *android.NativeWindow) (VulkanDeviceInfo, error) {
-
+func NewVulkanDevice(appInfo *vk.ApplicationInfo, window uintptr) (VulkanDeviceInfo, error) {
 	// Phase 1: vk.CreateInstance with vk.InstanceCreateInfo
 
 	existingExtensions := getInstanceExtensions()
 	log.Println("[INFO] Instance extensions:", existingExtensions)
 
-	instanceExtensions := []string{
-		"VK_KHR_surface\x00",
-		"VK_KHR_android_surface\x00",
-	}
+	instanceExtensions := vk.GetRequiredInstanceExtensions()
 	if enableDebug {
 		instanceExtensions = append(instanceExtensions,
 			"VK_EXT_debug_report\x00")
 	}
 
+	// ANDROID:
 	// these layers must be included in APK,
 	// see Android.mk and ValidationLayers.mk
 	instanceLayers := []string{
@@ -289,35 +284,33 @@ func NewVulkanDeviceAndroid(appInfo vk.ApplicationInfo,
 
 	instanceCreateInfo := vk.InstanceCreateInfo{
 		SType:                   vk.StructureTypeInstanceCreateInfo,
-		PApplicationInfo:        &appInfo,
+		PApplicationInfo:        appInfo,
 		EnabledExtensionCount:   uint32(len(instanceExtensions)),
 		PpEnabledExtensionNames: instanceExtensions,
 		EnabledLayerCount:       uint32(len(instanceLayers)),
 		PpEnabledLayerNames:     instanceLayers,
 	}
 	var v VulkanDeviceInfo
-	err := vk.Error(vk.CreateInstance(&instanceCreateInfo, nil, &v.instance))
+	err := vk.Error(vk.CreateInstance(&instanceCreateInfo, nil, &v.Instance))
 	if err != nil {
 		err = fmt.Errorf("vk.CreateInstance failed with %s", err)
 		return v, err
+	} else {
+		vk.InitInstance(v.Instance)
 	}
 
 	// Phase 2: vk.CreateAndroidSurface with vk.AndroidSurfaceCreateInfo
 
-	surfaceCreateInfo := vk.AndroidSurfaceCreateInfo{
-		SType:  vk.StructureTypeAndroidSurfaceCreateInfo,
-		Window: (*vk.ANativeWindow)(window),
-	}
-	err = vk.Error(vk.CreateAndroidSurface(v.instance, &surfaceCreateInfo, nil, &v.surface))
+	err = vk.Error(vk.CreateWindowSurface(v.Instance, window, nil, &v.Surface))
 	if err != nil {
-		vk.DestroyInstance(v.instance, nil)
-		err = fmt.Errorf("vk.CreateAndroidSurface failed with %s", err)
+		vk.DestroyInstance(v.Instance, nil)
+		err = fmt.Errorf("vkCreateWindowSurface failed with %s", err)
 		return v, err
 	}
-	if v.gpuDevices, err = getPhysicalDevices(v.instance); err != nil {
+	if v.gpuDevices, err = getPhysicalDevices(v.Instance); err != nil {
 		v.gpuDevices = nil
-		vk.DestroySurface(v.instance, v.surface, nil)
-		vk.DestroyInstance(v.instance, nil)
+		vk.DestroySurface(v.Instance, v.Surface, nil)
+		vk.DestroyInstance(v.Instance, nil)
 		return v, err
 	}
 
@@ -326,6 +319,7 @@ func NewVulkanDeviceAndroid(appInfo vk.ApplicationInfo,
 
 	// Phase 3: vk.CreateDevice with vk.DeviceCreateInfo (a logical device)
 
+	// ANDROID:
 	// these layers must be included in APK,
 	// see Android.mk and ValidationLayers.mk
 	deviceLayers := []string{
@@ -360,15 +354,15 @@ func NewVulkanDeviceAndroid(appInfo vk.ApplicationInfo,
 	err = vk.Error(vk.CreateDevice(v.gpuDevices[0], &deviceCreateInfo, nil, &device))
 	if err != nil {
 		v.gpuDevices = nil
-		vk.DestroySurface(v.instance, v.surface, nil)
-		vk.DestroyInstance(v.instance, nil)
+		vk.DestroySurface(v.Instance, v.Surface, nil)
+		vk.DestroyInstance(v.Instance, nil)
 		err = fmt.Errorf("vk.CreateDevice failed with %s", err)
 		return v, err
 	} else {
-		v.device = device
+		v.Device = device
 		var queue vk.Queue
 		vk.GetDeviceQueue(device, 0, 0, &queue)
-		v.queue = queue
+		v.Queue = queue
 	}
 
 	if enableDebug {
@@ -380,7 +374,7 @@ func NewVulkanDeviceAndroid(appInfo vk.ApplicationInfo,
 			PfnCallback: dbgCallbackFunc,
 		}
 		var dbg vk.DebugReportCallback
-		err = vk.Error(vk.CreateDebugReportCallback(v.instance, &dbgCreateInfo, nil, &dbg))
+		err = vk.Error(vk.CreateDebugReportCallback(v.Instance, &dbgCreateInfo, nil, &dbg))
 		if err != nil {
 			err = fmt.Errorf("vk.CreateDebugReportCallback failed with %s", err)
 			log.Println("[WARN]", err)
@@ -464,28 +458,28 @@ func (v *VulkanDeviceInfo) CreateSwapchain() (VulkanSwapchainInfo, error) {
 
 	var s VulkanSwapchainInfo
 	var surfaceCapabilities vk.SurfaceCapabilities
-	err := vk.Error(vk.GetPhysicalDeviceSurfaceCapabilities(gpu, v.surface, &surfaceCapabilities))
+	err := vk.Error(vk.GetPhysicalDeviceSurfaceCapabilities(gpu, v.Surface, &surfaceCapabilities))
 	if err != nil {
 		err = fmt.Errorf("vk.GetPhysicalDeviceSurfaceCapabilities failed with %s", err)
 		return s, err
 	}
 	var formatCount uint32
-	vk.GetPhysicalDeviceSurfaceFormats(gpu, v.surface, &formatCount, nil)
+	vk.GetPhysicalDeviceSurfaceFormats(gpu, v.Surface, &formatCount, nil)
 	formats := make([]vk.SurfaceFormat, formatCount)
-	vk.GetPhysicalDeviceSurfaceFormats(gpu, v.surface, &formatCount, formats)
+	vk.GetPhysicalDeviceSurfaceFormats(gpu, v.Surface, &formatCount, formats)
 
 	log.Println("[INFO] got", formatCount, "physical device surface formats")
 
 	chosenFormat := -1
 	for i := 0; i < int(formatCount); i++ {
 		formats[i].Deref()
-		if formats[i].Format == vk.FormatR8g8b8a8Unorm {
+		if formats[i].Format == vk.FormatB8g8r8a8Unorm {
 			chosenFormat = i
 			break
 		}
 	}
 	if chosenFormat < 0 {
-		err := fmt.Errorf("vk.GetPhysicalDeviceSurfaceFormats not found vk.FormatR8g8b8a8Unorm format")
+		err := fmt.Errorf("vk.GetPhysicalDeviceSurfaceFormats not found vk.FormatB8g8r8a8Unorm format")
 		return s, err
 	}
 
@@ -493,13 +487,13 @@ func (v *VulkanDeviceInfo) CreateSwapchain() (VulkanSwapchainInfo, error) {
 	//			create a swapchain with supported capabilities and format
 
 	surfaceCapabilities.Deref()
-	s.displaySize = surfaceCapabilities.CurrentExtent
-	s.displaySize.Deref()
-	s.displayFormat = formats[chosenFormat].Format
+	s.DisplaySize = surfaceCapabilities.CurrentExtent
+	s.DisplaySize.Deref()
+	s.DisplayFormat = formats[chosenFormat].Format
 	queueFamily := []uint32{0}
 	swapchainCreateInfo := vk.SwapchainCreateInfo{
 		SType:           vk.StructureTypeSwapchainCreateInfo,
-		Surface:         v.surface,
+		Surface:         v.Surface,
 		MinImageCount:   surfaceCapabilities.MinImageCount,
 		ImageFormat:     formats[chosenFormat].Format,
 		ImageColorSpace: formats[chosenFormat].ColorSpace,
@@ -512,17 +506,17 @@ func (v *VulkanDeviceInfo) CreateSwapchain() (VulkanSwapchainInfo, error) {
 		QueueFamilyIndexCount: 1,
 		PQueueFamilyIndices:   queueFamily,
 		PresentMode:           vk.PresentModeFifo,
-		OldSwapchain:          vk.NullHandle,
+		OldSwapchain:          vk.NullSwapchain,
 		Clipped:               vk.False,
 	}
-	s.swapchains = make([]vk.Swapchain, 1)
-	err = vk.Error(vk.CreateSwapchain(v.device, &swapchainCreateInfo, nil, &s.swapchains[0]))
+	s.Swapchains = make([]vk.Swapchain, 1)
+	err = vk.Error(vk.CreateSwapchain(v.Device, &swapchainCreateInfo, nil, &s.Swapchains[0]))
 	if err != nil {
 		err = fmt.Errorf("vk.CreateSwapchain failed with %s", err)
 		return s, err
 	}
-	s.swapchainLen = make([]uint32, 1)
-	err = vk.Error(vk.GetSwapchainImages(v.device, s.DefaultSwapchain(), &s.swapchainLen[0], nil))
+	s.SwapchainLen = make([]uint32, 1)
+	err = vk.Error(vk.GetSwapchainImages(v.Device, s.DefaultSwapchain(), &s.SwapchainLen[0], nil))
 	if err != nil {
 		err = fmt.Errorf("vk.GetSwapchainImages failed with %s", err)
 		return s, err
@@ -530,7 +524,7 @@ func (v *VulkanDeviceInfo) CreateSwapchain() (VulkanSwapchainInfo, error) {
 	for i := range formats {
 		formats[i].Free()
 	}
-	s.device = v.device
+	s.Device = v.Device
 	return s, nil
 }
 
@@ -538,24 +532,24 @@ func (s *VulkanSwapchainInfo) CreateFramebuffers(renderPass vk.RenderPass, depth
 	// Phase 1: vk.GetSwapchainImages
 
 	var swapchainImagesCount uint32
-	err := vk.Error(vk.GetSwapchainImages(s.device, s.DefaultSwapchain(), &swapchainImagesCount, nil))
+	err := vk.Error(vk.GetSwapchainImages(s.Device, s.DefaultSwapchain(), &swapchainImagesCount, nil))
 	if err != nil {
 		err = fmt.Errorf("vk.GetSwapchainImages failed with %s", err)
 		return err
 	}
 	swapchainImages := make([]vk.Image, swapchainImagesCount)
-	vk.GetSwapchainImages(s.device, s.DefaultSwapchain(), &swapchainImagesCount, swapchainImages)
+	vk.GetSwapchainImages(s.Device, s.DefaultSwapchain(), &swapchainImagesCount, swapchainImages)
 
 	// Phase 2: vk.CreateImageView
 	//			create image view for each swapchain image
 
-	s.displayViews = make([]vk.ImageView, len(swapchainImages))
-	for i := range s.displayViews {
+	s.DisplayViews = make([]vk.ImageView, len(swapchainImages))
+	for i := range s.DisplayViews {
 		viewCreateInfo := vk.ImageViewCreateInfo{
 			SType:    vk.StructureTypeImageViewCreateInfo,
 			Image:    swapchainImages[i],
 			ViewType: vk.ImageViewType2d,
-			Format:   s.displayFormat,
+			Format:   s.DisplayFormat,
 			Components: vk.ComponentMapping{
 				R: vk.ComponentSwizzleR,
 				G: vk.ComponentSwizzleG,
@@ -568,7 +562,7 @@ func (s *VulkanSwapchainInfo) CreateFramebuffers(renderPass vk.RenderPass, depth
 				LayerCount: 1,
 			},
 		}
-		err := vk.Error(vk.CreateImageView(s.device, &viewCreateInfo, nil, &s.displayViews[i]))
+		err := vk.Error(vk.CreateImageView(s.Device, &viewCreateInfo, nil, &s.DisplayViews[i]))
 		if err != nil {
 			err = fmt.Errorf("vk.CreateImageView failed with %s", err)
 			return err // bail out
@@ -579,10 +573,10 @@ func (s *VulkanSwapchainInfo) CreateFramebuffers(renderPass vk.RenderPass, depth
 	// Phase 3: vk.CreateFramebuffer
 	//			create a framebuffer from each swapchain image
 
-	s.framebuffers = make([]vk.Framebuffer, s.DefaultSwapchainLen())
-	for i := range s.framebuffers {
+	s.Framebuffers = make([]vk.Framebuffer, s.DefaultSwapchainLen())
+	for i := range s.Framebuffers {
 		attachments := []vk.ImageView{
-			s.displayViews[i], depthView,
+			s.DisplayViews[i], depthView,
 		}
 		fbCreateInfo := vk.FramebufferCreateInfo{
 			SType:           vk.StructureTypeFramebufferCreateInfo,
@@ -590,13 +584,13 @@ func (s *VulkanSwapchainInfo) CreateFramebuffers(renderPass vk.RenderPass, depth
 			Layers:          1,
 			AttachmentCount: 1, // 2 if has depthView
 			PAttachments:    attachments,
-			Width:           s.displaySize.Width,
-			Height:          s.displaySize.Height,
+			Width:           s.DisplaySize.Width,
+			Height:          s.DisplaySize.Height,
 		}
-		if depthView != vk.NullHandle {
+		if depthView != vk.NullImageView {
 			fbCreateInfo.AttachmentCount = 2
 		}
-		err := vk.Error(vk.CreateFramebuffer(s.device, &fbCreateInfo, nil, &s.framebuffers[i]))
+		err := vk.Error(vk.CreateFramebuffer(s.Device, &fbCreateInfo, nil, &s.Framebuffers[i]))
 		if err != nil {
 			err = fmt.Errorf("vk.CreateFramebuffer failed with %s", err)
 			return err // bail out
@@ -629,7 +623,7 @@ func (v VulkanDeviceInfo) CreateBuffers() (VulkanBufferInfo, error) {
 	buffer := VulkanBufferInfo{
 		vertexBuffers: make([]vk.Buffer, 1),
 	}
-	err := vk.Error(vk.CreateBuffer(v.device, &bufferCreateInfo, nil, &buffer.vertexBuffers[0]))
+	err := vk.Error(vk.CreateBuffer(v.Device, &bufferCreateInfo, nil, &buffer.vertexBuffers[0]))
 	if err != nil {
 		err = fmt.Errorf("vk.CreateBuffer failed with %s", err)
 		return buffer, err
@@ -640,7 +634,7 @@ func (v VulkanDeviceInfo) CreateBuffers() (VulkanBufferInfo, error) {
 	// 			assign a proper memory type for that buffer
 
 	var memReq vk.MemoryRequirements
-	vk.GetBufferMemoryRequirements(v.device, buffer.DefaultVertexBuffer(), &memReq)
+	vk.GetBufferMemoryRequirements(v.Device, buffer.DefaultVertexBuffer(), &memReq)
 	memReq.Deref()
 	allocInfo := vk.MemoryAllocateInfo{
 		SType:           vk.StructureTypeMemoryAllocateInfo,
@@ -657,28 +651,28 @@ func (v VulkanDeviceInfo) CreateBuffers() (VulkanBufferInfo, error) {
 	// 			allocate and map memory for that buffer
 
 	var deviceMemory vk.DeviceMemory
-	err = vk.Error(vk.AllocateMemory(v.device, &allocInfo, nil, &deviceMemory))
+	err = vk.Error(vk.AllocateMemory(v.Device, &allocInfo, nil, &deviceMemory))
 	if err != nil {
 		err = fmt.Errorf("vk.AllocateMemory failed with %s", err)
 		return buffer, err
 	}
 	var data unsafe.Pointer
-	vk.MapMemory(v.device, deviceMemory, 0, vk.DeviceSize(vertexDataSize), 0, &data)
+	vk.MapMemory(v.Device, deviceMemory, 0, vk.DeviceSize(vertexDataSize), 0, &data)
 	n := vk.MemCopyFloat32(data, vertexData)
 	if n != len(vertexData) {
 		log.Println("[WARN] failed to copy vertex buffer data")
 	}
-	vk.UnmapMemory(v.device, deviceMemory)
+	vk.UnmapMemory(v.Device, deviceMemory)
 
 	// Phase 4: vk.BindBufferMemory
 	//			copy vertex data and bind buffer
 
-	err = vk.Error(vk.BindBufferMemory(v.device, buffer.DefaultVertexBuffer(), deviceMemory, 0))
+	err = vk.Error(vk.BindBufferMemory(v.Device, buffer.DefaultVertexBuffer(), deviceMemory, 0))
 	if err != nil {
 		err = fmt.Errorf("vk.BindBufferMemory failed with %s", err)
 		return buffer, err
 	}
-	buffer.device = v.device
+	buffer.device = v.Device
 	return buffer, err
 }
 
@@ -896,31 +890,31 @@ func (gfx *VulkanGfxPipelineInfo) Destroy() {
 
 func (s *VulkanSwapchainInfo) Destroy() {
 	for i := uint32(0); i < s.DefaultSwapchainLen(); i++ {
-		vk.DestroyFramebuffer(s.device, s.framebuffers[i], nil)
-		vk.DestroyImageView(s.device, s.displayViews[i], nil)
+		vk.DestroyFramebuffer(s.Device, s.Framebuffers[i], nil)
+		vk.DestroyImageView(s.Device, s.DisplayViews[i], nil)
 	}
-	s.framebuffers = nil
-	s.displayViews = nil
-	for i := range s.swapchains {
-		vk.DestroySwapchain(s.device, s.swapchains[i], nil)
+	s.Framebuffers = nil
+	s.DisplayViews = nil
+	for i := range s.Swapchains {
+		vk.DestroySwapchain(s.Device, s.Swapchains[i], nil)
 	}
 }
 
 func DestroyInOrder(v *VulkanDeviceInfo, s *VulkanSwapchainInfo,
 	r *VulkanRenderInfo, b *VulkanBufferInfo, gfx *VulkanGfxPipelineInfo) {
 
-	vk.FreeCommandBuffers(v.device, r.cmdPool, uint32(len(r.cmdBuffers)), r.cmdBuffers)
+	vk.FreeCommandBuffers(v.Device, r.cmdPool, uint32(len(r.cmdBuffers)), r.cmdBuffers)
 	r.cmdBuffers = nil
 
-	vk.DestroyCommandPool(v.device, r.cmdPool, nil)
-	vk.DestroyRenderPass(v.device, r.renderPass, nil)
+	vk.DestroyCommandPool(v.Device, r.cmdPool, nil)
+	vk.DestroyRenderPass(v.Device, r.RenderPass, nil)
 
 	s.Destroy()
 	gfx.Destroy()
 	b.Destroy()
-	vk.DestroyDevice(v.device, nil)
-	if v.dbg != vk.NullHandle {
-		vk.DestroyDebugReportCallback(v.instance, v.dbg, nil)
+	vk.DestroyDevice(v.Device, nil)
+	if v.dbg != vk.NullDebugReportCallback {
+		vk.DestroyDebugReportCallback(v.Instance, v.dbg, nil)
 	}
-	vk.DestroyInstance(v.instance, nil)
+	vk.DestroyInstance(v.Instance, nil)
 }

@@ -7,7 +7,7 @@
 // shaders/tri.vert
 // DO NOT EDIT!
 
-package main
+package vulkandraw
 
 import (
 	"bytes"
@@ -224,11 +224,11 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"shaders/.DS_Store": shadersDs_store,
+	"shaders/.DS_Store":    shadersDs_store,
 	"shaders/tri-frag.spv": shadersTriFragSpv,
 	"shaders/tri-vert.spv": shadersTriVertSpv,
-	"shaders/tri.frag": shadersTriFrag,
-	"shaders/tri.vert": shadersTriVert,
+	"shaders/tri.frag":     shadersTriFrag,
+	"shaders/tri.vert":     shadersTriVert,
 }
 
 // AssetDir returns the file names below a certain
@@ -270,13 +270,14 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
 	"shaders": &bintree{nil, map[string]*bintree{
-		".DS_Store": &bintree{shadersDs_store, map[string]*bintree{}},
+		".DS_Store":    &bintree{shadersDs_store, map[string]*bintree{}},
 		"tri-frag.spv": &bintree{shadersTriFragSpv, map[string]*bintree{}},
 		"tri-vert.spv": &bintree{shadersTriVertSpv, map[string]*bintree{}},
-		"tri.frag": &bintree{shadersTriFrag, map[string]*bintree{}},
-		"tri.vert": &bintree{shadersTriVert, map[string]*bintree{}},
+		"tri.frag":     &bintree{shadersTriFrag, map[string]*bintree{}},
+		"tri.vert":     &bintree{shadersTriVert, map[string]*bintree{}},
 	}},
 }}
 
@@ -326,4 +327,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-
