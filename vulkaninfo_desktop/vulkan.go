@@ -33,10 +33,12 @@ func NewVulkanDevice(appInfo *vk.ApplicationInfo, win *glfw.Window) (*VulkanDevi
 	if err != nil {
 		err = fmt.Errorf("vkCreateInstance failed with %s", err)
 		return nil, err
+	} else {
+		vk.InitInstance(v.instance)
 	}
 
 	// step 2: init the surface using a GLFW window
-	err = vk.Error(vk.CreateGLFWSurface(v.instance, win.GLFWWindow(), nil, &v.surface))
+	err = vk.Error(vk.CreateWindowSurface(v.instance, win.GLFWWindow(), nil, &v.surface))
 	if err != nil {
 		vk.DestroyInstance(v.instance, nil)
 		err = fmt.Errorf("vkCreateWindowSurface failed with %s", err)

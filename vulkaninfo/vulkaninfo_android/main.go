@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/vulkan-go/demos/vulkaninfo"
 	vk "github.com/vulkan-go/vulkan"
 	"github.com/xlab/android-go/app"
 	"github.com/xlab/catcher"
@@ -27,7 +28,7 @@ func main() {
 			catcher.RecvDie(-1),
 		)
 
-		var vkDevice *VulkanDeviceInfo
+		var vkDevice *vulkaninfo.VulkanDeviceInfo
 		a.HandleNativeWindowEvents(nativeWindowEvents)
 		a.InitDone()
 		for {
@@ -39,9 +40,9 @@ func main() {
 				case app.NativeWindowCreated:
 					err := vk.Init()
 					orPanic(err)
-					vkDevice, err = NewVulkanDevice(appInfo, event.Window)
+					vkDevice, err = vulkaninfo.NewVulkanDevice(appInfo, event.Window.Ptr())
 					orPanic(err)
-					printInfo(vkDevice)
+					vulkaninfo.PrintInfo(vkDevice)
 				case app.NativeWindowDestroyed:
 					vkDevice.Destroy()
 				case app.NativeWindowRedrawNeeded:
@@ -50,4 +51,21 @@ func main() {
 			}
 		}
 	})
+}
+
+func orPanic(err interface{}) {
+	switch v := err.(type) {
+	case error:
+		if v != nil {
+			panic(err)
+		}
+	case vk.Result:
+		if err := vk.Error(v); err != nil {
+			panic(err)
+		}
+	case bool:
+		if !v {
+			panic("condition failed: != true")
+		}
+	}
 }

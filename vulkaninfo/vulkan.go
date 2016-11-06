@@ -1,10 +1,9 @@
-package main
+package vulkaninfo
 
 import (
 	"fmt"
 
 	vk "github.com/vulkan-go/vulkan"
-	"github.com/xlab/android-go/android"
 	"github.com/xlab/tablewriter"
 )
 
@@ -16,16 +15,11 @@ type VulkanDeviceInfo struct {
 	device   vk.Device
 }
 
-func NewVulkanDevice(appInfo *vk.ApplicationInfo,
-	window *android.NativeWindow) (*VulkanDeviceInfo, error) {
-
+func NewVulkanDevice(appInfo *vk.ApplicationInfo, window uintptr) (*VulkanDeviceInfo, error) {
 	v := &VulkanDeviceInfo{}
 
 	// step 1: create a Vulkan instance.
-	instanceExtensions := []string{
-		"VK_KHR_surface\x00",
-		"VK_KHR_android_surface\x00",
-	}
+	instanceExtensions := vk.GetRequiredInstanceExtensions()
 	instanceCreateInfo := &vk.InstanceCreateInfo{
 		SType:                   vk.StructureTypeInstanceCreateInfo,
 		PApplicationInfo:        appInfo,
@@ -36,17 +30,15 @@ func NewVulkanDevice(appInfo *vk.ApplicationInfo,
 	if err != nil {
 		err = fmt.Errorf("vkCreateInstance failed with %s", err)
 		return nil, err
+	} else {
+		vk.InitInstance(v.instance)
 	}
 
-	// step 2: init the surface using an Android native window.
-	createInfo := &vk.AndroidSurfaceCreateInfo{
-		SType:  vk.StructureTypeAndroidSurfaceCreateInfo,
-		Window: (*vk.ANativeWindow)(window),
-	}
-	err = vk.Error(vk.CreateAndroidSurface(v.instance, createInfo, nil, &v.surface))
+	// step 2: init the surface using the native window pointer.
+	err = vk.Error(vk.CreateWindowSurface(v.instance, window, nil, &v.surface))
 	if err != nil {
 		vk.DestroyInstance(v.instance, nil)
-		err = fmt.Errorf("vkCreateAndroidSurface failed with %s", err)
+		err = fmt.Errorf("vkCreateWindowSurface failed with %s", err)
 		return nil, err
 	}
 	if v.gpuDevices, err = getPhysicalDevices(v.instance); err != nil {
@@ -177,7 +169,7 @@ func getDeviceExtensions(gpu vk.PhysicalDevice) (extNames []string) {
 	return extNames
 }
 
-func printInfo(v *VulkanDeviceInfo) {
+func PrintInfo(v *VulkanDeviceInfo) {
 	var gpuProperties vk.PhysicalDeviceProperties
 	vk.GetPhysicalDeviceProperties(v.gpuDevices[0], &gpuProperties)
 	gpuProperties.Deref()
