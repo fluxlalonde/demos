@@ -5,8 +5,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/golang-ui/glfw"
 	"github.com/vulkan-go/demos/vulkandraw"
+	"github.com/vulkan-go/glfw/v3.3/glfw"
 	vk "github.com/vulkan-go/vulkan"
 	"github.com/xlab/closer"
 )
@@ -37,10 +37,10 @@ func main() {
 	)
 
 	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
-	window := glfw.CreateWindow(640, 480, "Vulkan Info", nil, nil)
-	orPanic(window != nil)
+	window, err := glfw.CreateWindow(640, 480, "Vulkan Info", nil, nil)
+	orPanic(err)
 
-	v, err := vulkandraw.NewVulkanDevice(appInfo, window.Ptr())
+	v, err = vulkandraw.NewVulkanDevice(appInfo, window.GLFWWindow())
 	orPanic(err)
 	s, err = v.CreateSwapchain()
 	orPanic(err)
@@ -70,12 +70,13 @@ func main() {
 		select {
 		case <-exitC:
 			vulkandraw.DestroyInOrder(&v, &s, &r, &b, &gfx)
+			window.Destroy()
 			glfw.Terminate()
 			fpsTicker.Stop()
 			doneC <- struct{}{}
 			return
 		case <-fpsTicker.C:
-			if glfw.WindowShouldClose(window) > 0 {
+			if window.ShouldClose() {
 				exitC <- struct{}{}
 				continue
 			}
