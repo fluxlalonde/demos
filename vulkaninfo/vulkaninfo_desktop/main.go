@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/golang-ui/glfw"
 	"github.com/vulkan-go/demos/vulkaninfo"
+	"github.com/vulkan-go/glfw/v3.3/glfw"
 	vk "github.com/vulkan-go/vulkan"
 )
 
@@ -19,11 +19,11 @@ func main() {
 	orPanic(vk.Init())
 
 	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
-	win := glfw.CreateWindow(640, 480, "Vulkan Info", nil, nil)
-	orPanic(win != nil)
-	defer glfw.DestroyWindow(win)
+	window, err := glfw.CreateWindow(640, 480, "Vulkan Info", nil, nil)
+	orPanic(err)
+	defer window.Destroy()
 
-	vkDevice, err := vulkaninfo.NewVulkanDevice(appInfo, win.Ptr())
+	vkDevice, err := vulkaninfo.NewVulkanDevice(appInfo, window.GLFWWindow())
 	orPanic(err)
 	vulkaninfo.PrintInfo(vkDevice)
 	vkDevice.Destroy()
