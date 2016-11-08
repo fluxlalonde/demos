@@ -187,33 +187,35 @@ func PrintInfo(v *VulkanDeviceInfo) {
 	table.AddRow("API Version Supported", vk.Version(gpuProperties.ApiVersion))
 	table.AddRow("Driver Version", vk.Version(gpuProperties.DriverVersion))
 
-	var surfaceCapabilities vk.SurfaceCapabilities
-	vk.GetPhysicalDeviceSurfaceCapabilities(v.gpuDevices[0], v.surface, &surfaceCapabilities)
-	surfaceCapabilities.Deref()
-	surfaceCapabilities.CurrentExtent.Deref()
-	surfaceCapabilities.MinImageExtent.Deref()
-	surfaceCapabilities.MaxImageExtent.Deref()
+	if v.surface != vk.NullSurface {
+		var surfaceCapabilities vk.SurfaceCapabilities
+		vk.GetPhysicalDeviceSurfaceCapabilities(v.gpuDevices[0], v.surface, &surfaceCapabilities)
+		surfaceCapabilities.Deref()
+		surfaceCapabilities.CurrentExtent.Deref()
+		surfaceCapabilities.MinImageExtent.Deref()
+		surfaceCapabilities.MaxImageExtent.Deref()
 
-	table.AddSeparator()
-	table.AddRow("Image count", fmt.Sprintf("%d - %d",
-		surfaceCapabilities.MinImageCount, surfaceCapabilities.MaxImageCount))
-	table.AddRow("Array layers", fmt.Sprintf("%d",
-		surfaceCapabilities.MaxImageArrayLayers))
-	table.AddRow("Image size (current)", fmt.Sprintf("%dx%d",
-		surfaceCapabilities.CurrentExtent.Width, surfaceCapabilities.CurrentExtent.Height))
-	table.AddRow("Image size (extent)", fmt.Sprintf("%dx%d - %dx%d",
-		surfaceCapabilities.MinImageExtent.Width, surfaceCapabilities.MinImageExtent.Height,
-		surfaceCapabilities.MaxImageExtent.Width, surfaceCapabilities.MaxImageExtent.Height))
-	table.AddRow("Usage flags", fmt.Sprintf("%02x",
-		surfaceCapabilities.SupportedUsageFlags))
-	table.AddRow("Current transform", fmt.Sprintf("%02x",
-		surfaceCapabilities.CurrentTransform))
-	table.AddRow("Allowed transforms", fmt.Sprintf("%02x",
-		surfaceCapabilities.SupportedTransforms))
-	var formatCount uint32
-	vk.GetPhysicalDeviceSurfaceFormats(v.gpuDevices[0], v.surface, &formatCount, nil)
-	table.AddRow("Surface formats", fmt.Sprintf("%d of %d", formatCount, vk.FormatRangeSize))
-	table.AddSeparator()
+		table.AddSeparator()
+		table.AddRow("Image count", fmt.Sprintf("%d - %d",
+			surfaceCapabilities.MinImageCount, surfaceCapabilities.MaxImageCount))
+		table.AddRow("Array layers", fmt.Sprintf("%d",
+			surfaceCapabilities.MaxImageArrayLayers))
+		table.AddRow("Image size (current)", fmt.Sprintf("%dx%d",
+			surfaceCapabilities.CurrentExtent.Width, surfaceCapabilities.CurrentExtent.Height))
+		table.AddRow("Image size (extent)", fmt.Sprintf("%dx%d - %dx%d",
+			surfaceCapabilities.MinImageExtent.Width, surfaceCapabilities.MinImageExtent.Height,
+			surfaceCapabilities.MaxImageExtent.Width, surfaceCapabilities.MaxImageExtent.Height))
+		table.AddRow("Usage flags", fmt.Sprintf("%02x",
+			surfaceCapabilities.SupportedUsageFlags))
+		table.AddRow("Current transform", fmt.Sprintf("%02x",
+			surfaceCapabilities.CurrentTransform))
+		table.AddRow("Allowed transforms", fmt.Sprintf("%02x",
+			surfaceCapabilities.SupportedTransforms))
+		var formatCount uint32
+		vk.GetPhysicalDeviceSurfaceFormats(v.gpuDevices[0], v.surface, &formatCount, nil)
+		table.AddRow("Surface formats", fmt.Sprintf("%d of %d", formatCount, vk.FormatRangeSize))
+		table.AddSeparator()
+	}
 
 	table.AddRow("INSTANCE EXTENSIONS", "")
 	instanceExt := getInstanceExtensions()
