@@ -473,13 +473,14 @@ func (v *VulkanDeviceInfo) CreateSwapchain() (VulkanSwapchainInfo, error) {
 	chosenFormat := -1
 	for i := 0; i < int(formatCount); i++ {
 		formats[i].Deref()
-		if formats[i].Format == vk.FormatB8g8r8a8Unorm {
+		if formats[i].Format == vk.FormatB8g8r8a8Unorm ||
+			formats[i].Format == vk.FormatR8g8b8a8Unorm {
 			chosenFormat = i
 			break
 		}
 	}
 	if chosenFormat < 0 {
-		err := fmt.Errorf("vk.GetPhysicalDeviceSurfaceFormats not found vk.FormatB8g8r8a8Unorm format")
+		err := fmt.Errorf("vk.GetPhysicalDeviceSurfaceFormats not found suitable format")
 		return s, err
 	}
 
