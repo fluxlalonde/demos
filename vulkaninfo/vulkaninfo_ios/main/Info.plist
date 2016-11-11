@@ -4,6 +4,8 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>VulkanInfo</string>
 	<key>CFBundleExecutable</key>
 	<string>main</string>
 	<key>CFBundleIdentifier</key>

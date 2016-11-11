@@ -11,17 +11,17 @@ all: build
 build:
 	mkdir -p $(WORK)/build
 	GOOS=darwin GOARCH=arm64 CC=$(CC) CXX=$(CXX) \
-		CGO_CFLAGS="-isysroot $(ISYSROOT) -miphoneos-version-min=8.0 -arch arm64" \
-		CGO_LDFLAGS="-isysroot $(ISYSROOT) -F$(MOLTEN_FW) -miphoneos-version-min=8.0 -arch arm64" \
+		CGO_CFLAGS="-isysroot $(ISYSROOT) -miphoneos-version-min=9.0 -arch arm64" \
+		CGO_LDFLAGS="-isysroot $(ISYSROOT) -F$(MOLTEN_FW) -miphoneos-version-min=9.0 -arch arm64" \
 		CGO_ENABLED=1 go build -tags="ios" -o=$(WORK)/main/main $(PACKAGE)
 	xcrun xcodebuild -configuration Release -project $(WORK)/main.xcodeproj
 
 install:
 	# https://github.com/phonegap/ios-deploy
-	ios-deploy -b $(WORK)/build/Release-iphoneos/main.app
+	ios-deploy -b $(WORK)/build/Release-iphoneos/VulkanInfo.app
 
 debug:
-	ios-deploy -d -b $(WORK)/build/Release-iphoneos/main.app
+	ios-deploy -d -W -b $(WORK)/build/Release-iphoneos/VulkanInfo.app
 
 clean:
 	rm -rf $(WORK)/build
