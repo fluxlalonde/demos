@@ -58,8 +58,11 @@ func main() {
 					orPanic(err)
 					vulkandraw.VulkanInit(&v, &s, &r, &b, &gfx)
 					vkActive = true
-
-				case app.ApplicationWillTerminate:
+				case app.DidBecomeActive:
+					vkActive = true
+				case app.DidEnterBackground:
+					vkActive = false
+				case app.WillTerminate:
 					vkActive = false
 					vulkandraw.DestroyInOrder(&v, &s, &r, &b, &gfx)
 				}
