@@ -66,8 +66,7 @@ func orPanicWith(err interface{}, notes ...string) {
 
 func repackUint32(data []byte) []uint32 {
 	buf := make([]uint32, len(data)/4)
-	hdr := (*sliceHeader)(unsafe.Pointer(&buf))
-	vk.MemCopyByte(unsafe.Pointer(hdr.Data), data)
+	vk.Memcopy(unsafe.Pointer((*sliceHeader)(unsafe.Pointer(&buf)).Data), data)
 	return buf
 }
 

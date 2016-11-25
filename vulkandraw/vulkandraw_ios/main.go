@@ -14,7 +14,7 @@ var appInfo = &vk.ApplicationInfo{
 	ApiVersion:         vk.MakeVersion(1, 0, 0),
 	ApplicationVersion: vk.MakeVersion(1, 0, 0),
 	PApplicationName:   "VulkanDraw\x00",
-	PEngineName:        "golang\x00",
+	PEngineName:        "vulkango.com\x00",
 }
 
 func main() {

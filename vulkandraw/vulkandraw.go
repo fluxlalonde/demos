@@ -6,6 +6,7 @@ import (
 	"unsafe"
 
 	vk "github.com/vulkan-go/vulkan"
+	"github.com/xlab/linmath"
 )
 
 // enableDebug is disabled by default since VK_EXT_debug_report
@@ -606,16 +607,15 @@ func (v VulkanDeviceInfo) CreateBuffers() (VulkanBufferInfo, error) {
 	// Phase 1: vk.CreateBuffer
 	//			create the triangle vertex buffer
 
-	vertexData := []float32{
+	vertexData := linmath.ArrayFloat32([]float32{
 		-1, -1, 0,
 		1, -1, 0,
 		0, 1, 0,
-	}
-	vertexDataSize := 4 * len(vertexData)
+	})
 	queueFamilyIdx := []uint32{0}
 	bufferCreateInfo := vk.BufferCreateInfo{
 		SType:                 vk.StructureTypeBufferCreateInfo,
-		Size:                  vk.DeviceSize(vertexDataSize),
+		Size:                  vk.DeviceSize(vertexData.Sizeof()),
 		Usage:                 vk.BufferUsageFlags(vk.BufferUsageVertexBufferBit),
 		SharingMode:           vk.SharingModeExclusive,
 		QueueFamilyIndexCount: 1,
@@ -658,9 +658,9 @@ func (v VulkanDeviceInfo) CreateBuffers() (VulkanBufferInfo, error) {
 		return buffer, err
 	}
 	var data unsafe.Pointer
-	vk.MapMemory(v.Device, deviceMemory, 0, vk.DeviceSize(vertexDataSize), 0, &data)
-	n := vk.MemCopyFloat32(data, vertexData)
-	if n != len(vertexData) {
+	vk.MapMemory(v.Device, deviceMemory, 0, vk.DeviceSize(vertexData.Sizeof()), 0, &data)
+	n := vk.Memcopy(data, vertexData.Data())
+	if n != vertexData.Sizeof() {
 		log.Println("[WARN] failed to copy vertex buffer data")
 	}
 	vk.UnmapMemory(v.Device, deviceMemory)
